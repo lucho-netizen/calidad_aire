@@ -1,33 +1,73 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
-    <title>Calidad del Aire - Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Dashboard de Calidad del Aire</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #5a67d8, #48bb78);
+        }
+
+        .card {
+            background-color: #2d3748;
+            border-radius: 10px;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .highlight-btn {
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        .highlight-btn:hover {
+            background-color: #38bdf8;
+            transform: scale(1.05);
+        }
+
+        .title-text {
+            font-family: 'Arial', sans-serif;
+            font-weight: bold;
+        }
+    </style>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen p-6 font-sans">
-    <div class="max-w-5xl mx-auto">
-        <h1 class="text-3xl font-bold mb-6 text-center">📊 Estadísticas de Calidad del Aire</h1>
 
-        <div class="flex justify-center gap-4 mb-6">
-            <button id="horaBtn" onclick="cargarDatos('hora')" class="bg-cyan-600 hover:bg-cyan-700 px-4 py-2 rounded">Últimas Horas</button>
-            <button id="diaBtn" onclick="cargarDatos('dia')" class="bg-emerald-600 hover:bg-emerald-700 px-4 py-2 rounded">Últimos Días</button>
-            <button id="mesBtn" onclick="cargarDatos('mes')" class="bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded">Últimos Meses</button>
+<body class="bg-gray-900 text-white font-sans">
+    <div class="max-w-5xl mx-auto py-6 px-4">
+        <h1 class="text-3xl text-center font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-green-500 mb-6">
+            📊 Estadísticas de Calidad del Aire
+        </h1>
+
+        <!-- Botones de selección de periodo -->
+        <div class="flex justify-center gap-6 mb-6">
+            <button id="horaBtn" onclick="cargarDatos('hora')" class="highlight-btn bg-cyan-600 px-6 py-2 rounded-full">
+                Últimas Horas
+            </button>
+            <button id="diaBtn" onclick="cargarDatos('dia')" class="highlight-btn bg-emerald-600 px-6 py-2 rounded-full">
+                Últimos Días
+            </button>
+            <button id="mesBtn" onclick="cargarDatos('mes')" class="highlight-btn bg-indigo-600 px-6 py-2 rounded-full">
+                Últimos Meses
+            </button>
         </div>
 
-        <div class="bg-slate-800 rounded p-4 shadow-md grid grid-cols-2 gap-2 sm:grid-cols-3 text-sm sm:text-base">
-            <p><strong>🌡️ Temperatura:</strong> <span id="temp">--</span> °C</p>
-            <p><strong>💧 Humedad:</strong> <span id="hum">--</span> %</p>
-            <p><strong>🌀 CO₂:</strong> <span id="co2">--</span> ppm</p>
-            <p><strong>⚗️ Alcohol:</strong> <span id="alcohol">--</span> ppm</p>
-            <p><strong>🧪 Benzeno:</strong> <span id="benzeno">--</span> ppm</p>
-            <p><strong>🧫 Amoniaco:</strong> <span id="amoniaco">--</span> ppm</p>
+        <!-- Panel de estadísticas -->
+        <div class="card p-6 grid grid-cols-2 gap-4 sm:grid-cols-3 text-sm sm:text-lg">
+            <p><strong class="title-text">🌡️ Temperatura:</strong> <span id="temp">--</span> °C</p>
+            <p><strong class="title-text">💧 Humedad:</strong> <span id="hum">--</span> %</p>
+            <p><strong class="title-text">🌀 CO₂:</strong> <span id="co2">--</span> ppm</p>
+            <p><strong class="title-text">⚗️ Alcohol:</strong> <span id="alcohol">--</span> ppm</p>
+            <p><strong class="title-text">🧪 Benzeno:</strong> <span id="benzeno">--</span> ppm</p>
+            <p><strong class="title-text">🧫 Amoniaco:</strong> <span id="amoniaco">--</span> ppm</p>
         </div>
 
-        <div class="mt-6 bg-slate-800 rounded-lg shadow-lg p-4">
-            <h2 class="text-center text-lg font-semibold mb-4">Gráfico de Calidad del Aire</h2>
+        <!-- Gráfico -->
+        <div class="mt-8 card p-6">
+            <h2 class="text-center text-xl font-semibold text-gray-300 mb-4">Gráfico de Calidad del Aire</h2>
             <canvas id="grafico" height="120"></canvas>
             <p id="rango-horas" class="text-center text-sm text-gray-400 mt-3"></p>
         </div>
@@ -154,4 +194,5 @@
         window.onload = () => cargarDatos('hora');
     </script>
 </body>
+
 </html>
