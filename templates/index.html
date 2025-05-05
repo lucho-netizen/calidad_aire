@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Calidad del Aire - Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen p-6 font-sans">
+    <div class="max-w-5xl mx-auto">
+        <h1 class="text-3xl font-bold mb-6 text-center">📊 Estadísticas de Calidad del Aire</h1>
+
+        <div class="flex justify-center gap-4 mb-6">
+            <button id="horaBtn" onclick="cargarDatos('hora')" class="bg-cyan-600 hover:bg-cyan-700 px-4 py-2 rounded">Últimas Horas</button>
+            <button id="diaBtn" onclick="cargarDatos('dia')" class="bg-emerald-600 hover:bg-emerald-700 px-4 py-2 rounded">Últimos Días</button>
+            <button id="mesBtn" onclick="cargarDatos('mes')" class="bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded">Últimos Meses</button>
+        </div>
+
+        <div class="bg-slate-800 rounded p-4 shadow-md grid grid-cols-2 gap-2 sm:grid-cols-3 text-sm sm:text-base">
+            <p><strong>🌡️ Temperatura:</strong> <span id="temp">--</span> °C</p>
+            <p><strong>💧 Humedad:</strong> <span id="hum">--</span> %</p>
+            <p><strong>🌀 CO₂:</strong> <span id="co2">--</span> ppm</p>
+            <p><strong>⚗️ Alcohol:</strong> <span id="alcohol">--</span> ppm</p>
+            <p><strong>🧪 Benzeno:</strong> <span id="benzeno">--</span> ppm</p>
+            <p><strong>🧫 Amoniaco:</strong> <span id="amoniaco">--</span> ppm</p>
+        </div>
+
+        <div class="mt-6 bg-slate-800 rounded-lg shadow-lg p-4">
+            <h2 class="text-center text-lg font-semibold mb-4">Gráfico de Calidad del Aire</h2>
+            <canvas id="grafico" height="120"></canvas>
+            <p id="rango-horas" class="text-center text-sm text-gray-400 mt-3"></p>
+        </div>
+    </div>
+
+    <script>
+        let chart;
+        const socket = io.connect('http://127.0.0.1:6700');
+
+        function safeParse(id) {
+            const val = parseFloat(document.getElementById(id).textContent);
+            return isNaN(val) ? 0 : val;
+        }
+
+        function animateValue(id, start, end) {
+            const el = document.getElementById(id);
+            if (typeof end !== "number" || isNaN(end)) return;
+            const duration = 500;
+            const startTime = performance.now();
+
+            function update(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const value = start + (end - start) * progress;
+                el.textContent = value.toFixed(1);
+                if (progress < 1) requestAnimationFrame(update);
+            }
+
+            requestAnimationFrame(update);
+        }
+
+        async function cargarDatos(periodo = 'hora') {
+            // Resaltamos el botón correspondiente
+            const botones = document.querySelectorAll('button');
+            botones.forEach(btn => btn.classList.remove('bg-green-600', 'bg-blue-600', 'bg-indigo-600')); // Remover el color de todos los botones
+            const btnSeleccionado = document.getElementById(periodo + 'Btn');
+            btnSeleccionado.classList.add('bg-green-600'); // Cambiar color del botón seleccionado
+
+            const response = await fetch(`/api/estadisticas?periodo=${periodo}`);
+            const data = await response.json();
+
+            const labels = [];
+            const tempData = [];
+            const humData = [];
+            const co2Data = [];
+            const alcoholData = [];
+            const benzenoData = [];
+            const amoniacoData = [];
+
+            data.forEach(entry => {
+                labels.push(entry.periodo);
+                tempData.push(entry.temperatura);
+                humData.push(entry.humedad);
+                co2Data.push(entry.co2);
+                alcoholData.push(entry.alcohol);
+                benzenoData.push(entry.benzeno);
+                amoniacoData.push(entry.amoniaco);
+            });
+
+            document.getElementById("temp").textContent = tempData.at(-1)?.toFixed(1) ?? '--';
+            document.getElementById("hum").textContent = humData.at(-1)?.toFixed(1) ?? '--';
+            document.getElementById("co2").textContent = co2Data.at(-1)?.toFixed(1) ?? '--';
+            document.getElementById("alcohol").textContent = alcoholData.at(-1)?.toFixed(1) ?? '--';
+            document.getElementById("benzeno").textContent = benzenoData.at(-1)?.toFixed(1) ?? '--';
+            document.getElementById("amoniaco").textContent = amoniacoData.at(-1)?.toFixed(1) ?? '--';
+
+            document.getElementById("rango-horas").textContent = `Datos desde ${labels[0]} hasta ${labels.at(-1)}`;
+
+            if (chart) chart.destroy();
+            const ctx = document.getElementById('grafico').getContext('2d');
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [
+                        { label: 'Temperatura (°C)', data: tempData, borderColor: '#f87171', fill: false, tension: 0.4 },
+                        { label: 'Humedad (%)', data: humData, borderColor: '#38bdf8', fill: false, tension: 0.4 },
+                        { label: 'CO₂ (ppm)', data: co2Data, borderColor: '#34d399', fill: false, tension: 0.4 },
+                        { label: 'Alcohol (ppm)', data: alcoholData, borderColor: '#facc15', fill: false, tension: 0.4 },
+                        { label: 'Benzeno (ppm)', data: benzenoData, borderColor: '#c084fc', fill: false, tension: 0.4 },
+                        { label: 'Amoniaco (ppm)', data: amoniacoData, borderColor: '#60a5fa', fill: false, tension: 0.4 },
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { labels: { color: '#e5e7eb' } }
+                    },
+                    scales: {
+                        x: { ticks: { color: '#e5e7eb' } },
+                        y: { beginAtZero: true, ticks: { color: '#e5e7eb' } }
+                    }
+                }
+            });
+        }
+
+        socket.on('new_data', function(data) {
+            const lastTemp = safeParse("temp");
+            const lastHum = safeParse("hum");
+            const lastCO2 = safeParse("co2");
+            const lastAlcohol = safeParse("alcohol");
+            const lastBenzeno = safeParse("benzeno");
+            const lastAmoniaco = safeParse("amoniaco");
+
+            animateValue("temp", lastTemp, data.temperatura);
+            animateValue("hum", lastHum, data.humedad);
+            animateValue("co2", lastCO2, data.co2);
+            animateValue("alcohol", lastAlcohol, data.alcohol);
+            animateValue("benzeno", lastBenzeno, data.benzeno);
+            animateValue("amoniaco", lastAmoniaco, data.amoniaco);
+
+            if (chart) {
+                chart.data.labels.push(data.fecha);
+                chart.data.datasets[0].data.push(data.temperatura);
+                chart.data.datasets[1].data.push(data.humedad);
+                chart.data.datasets[2].data.push(data.co2);
+                chart.data.datasets[3].data.push(data.alcohol);
+                chart.data.datasets[4].data.push(data.benzeno);
+                chart.data.datasets[5].data.push(data.amoniaco);
+                chart.update();
+            }
+        });
+
+        window.onload = () => cargarDatos('hora');
+    </script>
+</body>
+</html>
