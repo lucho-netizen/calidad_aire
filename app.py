@@ -169,5 +169,6 @@ def insert_random_data():
 # Comenzar el hilo cuando se inicia la aplicación
 if __name__ == '__main__':
     start_background_task()  # Iniciar la comprobación de nuevos datos
-    start_insertion_thread()  # Iniciar la inserción de datos aleatorios
+    # start_insertion_thread()  # Iniciar la inserción de datos aleatorios
+    # check_for_new_data()
     socketio.run(app, debug=True, port=6700)
